@@ -19,6 +19,8 @@ SHOPIFY_ACCESS_TOKEN = os.environ.get('SHOPIFY_ACCESS_TOKEN')
 
 NS = {'e': 'urn:ebay:apis:eBLBaseComponents'}
 
+EXCLUDED_BRANDS = {'axe'}
+
 
 def ebay_call(call_name, body_xml):
     headers = {
@@ -118,6 +120,7 @@ def get_shopify_inventory():
               node {
                 sku
                 inventoryQuantity
+                product { vendor }
               }
             }
           }
@@ -143,7 +146,8 @@ def get_shopify_inventory():
             node = edge['node']
             sku = (node.get('sku') or '').strip()
             qty = node.get('inventoryQuantity') or 0
-            if sku:
+            vendor = (node.get('product', {}).get('vendor') or '').strip().lower()
+            if sku and vendor not in EXCLUDED_BRANDS:
                 inventory[sku] = max(0, qty)
 
         page_info = data['data']['productVariants']['pageInfo']
